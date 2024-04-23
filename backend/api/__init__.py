@@ -2,15 +2,15 @@
 create app
 """
 import logging
-import os
 import sys
 
 from fastapi import FastAPI
 from tortoise.contrib.fastapi import register_tortoise
 
 from .v1 import v1
+from backend.core import settings
 
-app = FastAPI()
+app = FastAPI(title=settings.TITLE, description=settings.DESC)
 
 app.include_router(v1, prefix="/api")
 

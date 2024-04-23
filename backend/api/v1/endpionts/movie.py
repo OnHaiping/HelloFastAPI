@@ -1,11 +1,12 @@
 from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from backend.core import deps
 from backend.models import Movie
-from backend.schemas import Movie_Pydantic, MovieIn_Pydantic
+from backend.schemas import Movie_Pydantic, MovieIn_Pydantic, Response200, Response400
 
-movie = APIRouter(tags=["电影相关"])
+movie = APIRouter(tags=["电影相关"], dependencies=[Depends(deps.get_current_user)])
 
 
 @movie.get("/movie", summary="电影列表", response_model=List[Movie_Pydantic])
@@ -16,7 +17,7 @@ async def movie_list(limit: int = 10, page: int = 1):
     # SELECT * FROM movie LIMIT skip , limit
     # SELECT * FROM movie LIMIT 0 OFFSET 10
     skip = (page - 1) * limit
-    # 从数据库中获取所有电影 , await代表异步，使用Movie_Pydantic.from_queryset(Movie.all())将Tortoise ORM的模型转换为Pydantic模型
+    # 从数据库中获取所有电影 , await代表异步，使用Movie_Pydantic.from_queryset(Movie.all()]]]]]]]]]])将Tortoise ORM的模型转换为Pydantic模型
     # 主要是为了验证数据的合法性
     return await Movie_Pydantic.from_queryset(Movie.all().offset(skip).limit(limit))
 
@@ -27,15 +28,15 @@ async def movie_create(movie_form: MovieIn_Pydantic):
     return await MovieIn_Pydantic.from_tortoise_orm(await Movie.create(**movie_form.dict()))
 
 
-@movie.put("/movie", summary="电影编辑")
+@movie.put("/movie/{pk}", summary="电影编辑")
 async def movie_update(pk: int, movie_form: MovieIn_Pydantic):
     if await Movie.filter(pk=pk).update(**movie_form.dict()):
-        return {"msg": "更新成功"}
-    return {"msg": "更新失败"}
+        return Response200()
+    return Response400(msg="更新失败")
 
 
 @movie.delete("/movie/{pk}", summary="电影删除")
 async def movie_delete(pk: int):
     if await Movie.filter(pk=pk).delete():
-        return {"msg": "删除成功"}
-    return {"msg": "删除失败"}
+        return Response200()
+    return Response400()
